@@ -1,0 +1,28 @@
+**/__pycache__/
+*.pyc
+
+.venv/
+venv/
+
+**/.ipynb_checkpoints/
+
+# DESI FITS files (10+ GB each, download via run_09)
+data/zpix-main-*.fits
+
+# LaTeX build artifacts
+texput.log
+
+# Trained models (large, reproducible via scripts; >100MB each, over GitHub's limit)
+# recursive so subdirs like output/models/real_noise/ are also covered
+output/models/**/*.pt
+output/models/**/*.pkl
+output/models/*.pt
+output/models/*.pkl
+
+# pykan auto-generated artifacts
+**/model/
+**/figures/sp_*.png
+output/pykan_cache/
+
+# Paper directory excluded entirely (not pushed to GitHub)
+paper/
