@@ -1,6 +1,16 @@
+# ⚠️ RETRACTED. The outputs mapped here are invalid.
+
+> The study is withdrawn. Every pre-existing CSV and figure listed below was
+> produced by a pipeline whose noise injection never perturbed the features that
+> carried the label. The files are superseded, not regenerated.
+>
+> This file is retained as a record of what produced what.
+> **Read [`../RETRACTION.md`](../RETRACTION.md) first.**
+
 # Manifest: real-photometric-noise experiment
 
-Data → script → output map for `paper/paper.tex`.
+Data → script → output map of the retracted study. The LaTeX source is not
+committed to this repository (see `.gitignore`).
 
 ## Datasets
 
@@ -11,16 +21,27 @@ Data → script → output map for `paper/paper.tex`.
 | `data/desi_dr1_sample_with_errors.csv` | DESI DR1 `zpix` FITS | 99,999 | DESI mags + `g/r/z` σ (balanced sample) |
 | `data/zpix-main-{bright,dark}.fits` | DESI DR1 | n/a | raw catalogues (8.8 + 10.5 GB, external) |
 
+> **⚠️ Data caveats.** `obj_ID` is not unique in `star_classification.csv` (100,000
+> rows, 78,053 unique), so the join to `sdss_errors.csv` is one-to-many and 36.6%
+> of usable rows carry an error vector belonging to a different object.
+> `desi_dr1_sample_with_errors.csv` stores a missing Gaia magnitude as `0.0`, not
+> NaN: `bp == 0` for 56.6% of rows, class-correlated (GALAXY 96.7%, QSO 67.2%,
+> STAR 5.9%).
+
 ## Pipeline
 
-| Script | Phase | Output |
-|--------|-------|--------|
-| `fetch_sdss_errors.py` | 0 | `data/sdss_errors.csv` |
-| `extract_desi_errors.py` | 0 | `data/desi_dr1_sample_with_errors.csv` |
-| `run_10_real_noise.py` | 1 | `output/results/real_noise_variant{A,B,C}_{sdss,desi}.csv`, `output/figures/real_noise_variant{B,C}_{sdss,desi}.png` |
-| `run_11_lipschitz.py` | 2 | `output/results/lipschitz_metrics.csv` |
-| `run_12_ablation_perclass.py` | 3 | `output/results/ablation_bands_sdss.csv`, `output/results/perclass_realnoise_{sdss,desi}.csv`, `output/figures/{ablation_bands_sdss,perclass_realnoise}.png` |
-| `run_13_seed_stats.py` | 4 | `output/results/seed_stats_gap_{sdss,desi}.csv`, `output/results/seed_stats_summary.csv`, `output/figures/seed_stats_gap.png` |
+| Script | Phase | Status | Output |
+|--------|-------|--------|--------|
+| `fetch_sdss_errors.py` | 0 | ok | `data/sdss_errors.csv` |
+| `extract_desi_errors.py` | 0 | **unfixed** (emits the 0.0 bp/rp sentinel) | `data/desi_dr1_sample_with_errors.csv` |
+| `run_10_real_noise.py` | 1 | **unfixed, outputs invalid** | `output/results/real_noise_variant{A,B,C}_{sdss,desi}.csv`, `output/figures/real_noise_variant{B,C}_{sdss,desi}.png` |
+| `run_11_lipschitz.py` | 2 | **unfixed, outputs invalid** | `output/results/lipschitz_metrics.csv` |
+| `run_12_ablation_perclass.py` | 3 | **unfixed, outputs invalid** | `output/results/ablation_bands_sdss.csv`, `output/results/perclass_realnoise_{sdss,desi}.csv`, `output/figures/{ablation_bands_sdss,perclass_realnoise}.png` |
+| `run_13_seed_stats.py` | 4 | **unfixed, outputs invalid** | `output/results/seed_stats_gap_{sdss,desi}.csv`, `output/results/seed_stats_summary.csv`, `output/figures/seed_stats_gap.png` |
+| `run_14_no_leak.py` | 5 | **leakage-free, the only trustworthy script here** | `output/results/noleak_variantB_{sdss,desi}.csv`, `output/results/noleak_summary.csv`, `output/results/noleak_jacobian.csv` |
+
+`run_11` through `run_13` all import the feature builders from `run_10`, so they
+inherit its defect.
 
 ## Models (per `run_10`/`run_11`)
 
@@ -29,22 +50,25 @@ Data → script → output map for `paper/paper.tex`.
   match KAN clean accuracy (equal-baseline control); **XGBoost** 200 trees, depth 6.
 - Real-noise injection: per-object σ scaled by α ∈ {0.5,1,2,5,10} on the magnitude bands.
 
-## Headline results
+> **⚠️ "on the magnitude bands" is the defect.** Only the magnitude bands carry a
+> σ, so only they were perturbed. The remaining features (`redshift` in both
+> surveys, `bp`/`rp` on DESI) stayed clean at every α and are precisely the ones
+> that determine the class. In `run_10` the MLP-Reg weight decay was also
+> grid-searched against accuracy on the test set, which was then used to report
+> every result.
 
-| Experiment | SDSS | DESI | Conclusion |
-|-----------|------|------|------------|
-| Variant A (uncertainties as features) | neutral/slightly worse | neutral | no extra signal; demarcation from LSST-RF |
-| Variant B equal-baseline, α=1 | KAN 0.9313 ≈ MLP-Reg 0.9315 | KAN 0.9305 ≈ MLP-Reg 0.9303 | equivalence survives real noise |
-| Variant B extreme, α=10 | KAN 0.8200 > MLP-Reg 0.7741 | KAN ≈ MLP-Reg | KAN edge only in SDSS heteroscedastic extreme |
-| Lipschitz (jac_mean) | KAN 3.06 / MLP-Reg 5.58 / MLP 57.7 | KAN 3.11 / MLP-Reg 6.97 / MLP 68.3 | implicit-regularizer confirmed mechanistically |
-| Band-ablation gap @α=10 | u_only +8.6 / all5 +4.6 / no_u −1.7 / grz −0.8 p.p. | (grz reproduces DESI null) | u band causes the KAN edge; SDSS/DESI confound removed |
-| Per-class edge @α=10 | QSO +13.3 / GALAXY +3.3 / STAR −3.3 p.p. | all within ±0.5 p.p. | SDSS edge is a quasar effect |
-| Seed-robustness gap @α=10 | +4.41 ± 1.67 p.p. (p=0.004, 5 seeds) | −0.52 ± 0.20 p.p. (p=0.004) | SDSS edge seed-robust; DESI null confirmed |
+## Results
+
+**Withdrawn.** The headline results table previously here is invalid. See
+[`../RETRACTION.md`](../RETRACTION.md) for the claim-by-claim verdict and for what
+`run_14_no_leak.py` gives instead.
 
 ## Integrity
 
 `data/checksums.sha256` covers the three CSV data files. Verify with
-`sha256sum -c data/checksums.sha256` (run from `data/`).
+`sha256sum -c data/checksums.sha256` (run from `data/`). The checksums attest that
+the input files are unmodified; they say nothing about whether the analysis built
+on them was correct.
 
 ## Data license
 

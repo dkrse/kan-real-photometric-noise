@@ -26,3 +26,6 @@ output/pykan_cache/
 
 # Paper directory excluded entirely (not pushed to GitHub)
 paper/
+
+# Slovak working notes (not published)
+docs-sk/

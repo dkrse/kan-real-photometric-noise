@@ -1,0 +1,7 @@
+dataset,Model,jac_mean,clean_test_acc
+sdss,KAN,1.7541,0.7813
+sdss,MLP-Reg,2.4072,0.7819
+sdss,MLP,14.9069,0.8596
+desi,KAN,3.1153,0.8204
+desi,MLP-Reg,6.656,0.8161
+desi,MLP,36.8849,0.8662
